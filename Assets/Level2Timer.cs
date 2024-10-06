@@ -47,14 +47,9 @@ public class Level2Timer : MonoBehaviour
                 // Save the new best time in the correct slot
                 PlayerPrefs.SetFloat($"Level2Time_{i}", newTime);
                 PlayerPrefs.Save();
-
-
                 break;
             }
         }
     }
-    public void Levels()
-    {
-        SceneManager.LoadScene("levels");
-    }
+    
 }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class PlayerShip : MonoBehaviour
 {
@@ -22,15 +23,28 @@ public class PlayerShip : MonoBehaviour
     public SpriteRenderer spriteRenderer;      // Reference to the player's sprite renderer
     public Sprite[] shipSprites;
     private Camera mainCamera;
-
-    private bool isPaused = false; // Track the pause state
+    public GameObject deathPanel;
+    private bool isPaused = false;
+    private Vector2 screenBounds;
+    // Track the pause state
 
     // New variables for audio
     public AudioClip shootSound;         // Reference to the shooting sound effect
     private AudioSource audioSource;     // Reference to the AudioSource component
 
+    private void PlayerDeath()
+    {
+        // Show the death panel and pause the game
+        deathPanel.SetActive(true);
+        Time.timeScale = 0f; // Pause the game
+        Debug.Log("Player Died!");
+    }
     private void Start()
     {
+        screenBounds = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, Camera.main.transform.position.z));
+        Time.timeScale = 1f;
+        deathPanel.SetActive(false);
+        isPaused = false;
         spriteRenderer = GetComponent<SpriteRenderer>(); // Get the SpriteRenderer component attached to the ship
         audioSource = GetComponent<AudioSource>();       // Get the AudioSource component
 
@@ -46,6 +60,10 @@ public class PlayerShip : MonoBehaviour
 
     private void Update()
     {
+        if (player_health <= 0)
+        {
+            PlayerDeath(); // Call the death function if health reaches 0
+        }
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             TogglePause(); // Toggle pause state when Escape is pressed
@@ -55,11 +73,46 @@ public class PlayerShip : MonoBehaviour
             TogglePause(); // Resume the game when Enter is pressed and the game is paused
         }
 
+        if(SceneManager.GetActiveScene().name == "level2")
+        {
+            if (BossMovement.bossHealth <= 0)
+            {
+                deathPanel.SetActive(true);
+                Time.timeScale = 0f;
+
+            }
+        }
+
         if (!isPaused)
         {
             MovePlayer();                         // Handle player movement
             HandleShooting();                     // Handle shooting
         }
+    }
+    public void RestartGame()
+    {
+        isPaused = false;
+        player_health = 6;
+        Time.timeScale = 1f;
+        if (SceneManager.GetActiveScene().name == "level1")
+        {
+            SceneManager.LoadScene("Level1");
+        }
+        else
+        {
+            SceneManager.LoadScene("Level1");
+        }
+        deathPanel.SetActive(false);// Ensure the game is running at normal speed again
+                                    // Reload the current scene
+    }
+    public void GoToMainMenu()
+    {
+        isPaused = false;
+        player_health = 6;
+        
+        Time.timeScale = 1f;
+        deathPanel.SetActive(false);// Resume normal time
+        SceneManager.LoadScene("leaderboard"); // Load the Main Menu scene (make sure to name your main menu scene)
     }
 
     private void MovePlayer()
@@ -70,7 +123,16 @@ public class PlayerShip : MonoBehaviour
         float currentMoveSpeed = isSpeedBoosted ? moveSpeed * speedBoostMultiplier : moveSpeed; // Use boosted speed if active
 
         Vector3 movement = new Vector3(horizontalInput, verticalInput, 0f) * currentMoveSpeed * Time.deltaTime; // Calculate movement
-        transform.position += movement; // Move the player ship
+        Vector3 newPosition = transform.position + movement; // Calculate new position
+
+        // Clamp the player's position within the camera's bounds
+        float halfPlayerWidth = spriteRenderer.bounds.extents.x;
+        float halfPlayerHeight = spriteRenderer.bounds.extents.y;
+
+        newPosition.x = Mathf.Clamp(newPosition.x, -screenBounds.x + halfPlayerWidth, screenBounds.x - halfPlayerWidth);
+        newPosition.y = Mathf.Clamp(newPosition.y, -screenBounds.y + halfPlayerHeight, screenBounds.y - halfPlayerHeight);
+
+        transform.position = newPosition; ; // Move the player ship
     }
 
     private void HandleShooting()
@@ -103,7 +165,7 @@ public class PlayerShip : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D hitInfo)
     {
-        if (hitInfo.CompareTag("MiniEnemy") || hitInfo.CompareTag("boss_bullet") || hitInfo.CompareTag("Level2_boss"))
+        if (hitInfo.CompareTag("MiniEnemy") || hitInfo.CompareTag("boss_bullet") || hitInfo.CompareTag("Level2_boss")|| hitInfo.CompareTag("spider")|| hitInfo.CompareTag("Boss"))
         {
             if (isDamageable) // Only apply damage if the player is damageable
             {
