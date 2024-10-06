@@ -3,7 +3,18 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Enemy
+  - Bullet
+  - boss_bullet
+  - Boss
+  - MiniEnemy
+  - Bullet2
+  - Level2_boss
+  - heal
+  - shield
+  - speed
+  - spider
   layers:
   - Default
   - TransparentFX
